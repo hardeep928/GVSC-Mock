@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GVSC | Results, Charts & Markets</title>
+    <link rel="icon" href="assets/Logo3.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <a href="#markets" class="brand">
+                <img src="assets/Logo3.png" alt="GVSC">
+                <div>
+                    <strong>GVSC</strong>
+                </div>
+            </a>
+
+            <nav class="side-nav" id="side-nav">
+                <a href="#markets" data-page="markets">All Markets</a>
+                <a href="#chart" data-page="chart">Chart</a>
+                <a href="#leak-jodi" data-page="leak-jodi">Leak Jodi</a>
+                <a href="#list-market" data-page="list-market">List Your Market</a>
+            </nav>
+
+            <a class="side-download" href="https://gvsc.myaibusiness.online/" target="_blank" rel="noopener noreferrer">
+                <span>Download the game</span>
+                <small>Login, then install the PWA</small>
+            </a>
+        </aside>
+
+        <div class="main-wrap">
+            <header class="topbar">
+                <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+
+                <a href="#markets" class="header-logo">
+                    <img src="assets/Logo3.png" alt="GVSC Logo">
+                    <span class="header-title">GVSC</span>
+                </a>
+
+                <a class="download-btn" href="https://gvsc.myaibusiness.online/" target="_blank" rel="noopener noreferrer">
+                    <span class="download-full">Download Game</span>
+                    <span class="download-short">App</span>
+                </a>
+            </header>
+
+            <div class="promo-strip">
+                <p>
+                    Play on the official GVSC app.
+                    <a href="https://gvsc.myaibusiness.online/" target="_blank" rel="noopener noreferrer">Tap this link</a>,
+                    log in, then install from your browser (Add to Home Screen / PWA).
+                </p>
+            </div>
+
+            <main class="content" id="app"></main>
+        </div>
+    </div>
+
+    <div class="backdrop" id="backdrop"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
