@@ -201,7 +201,7 @@ function liveResultsBoard(markets) {
       const live = jodi !== OPEN_RESULT;
       return `
         <article class="live-item">
-          <h2>${escapeHtml(market.market_name)}</h2>
+          <h2>${escapeHtml(market.market_name)} <span class="rgb-live">(LIVE)</span></h2>
           <p class="live-num ${live ? "is-live" : "is-wait"}">${escapeHtml(jodi)}</p>
         </article>
       `;
@@ -212,17 +212,16 @@ function liveResultsBoard(markets) {
     <section class="hero-live" id="live-results">
       <div class="hero-bar">
         <p>BEST SITE MATKA RESULT !</p>
-        <strong>WWW.MATKAKING.COM</strong>
+        <strong>
+          <span class="neon-domain">WWW.MATKAKING.COM</span>
+          <span class="rgb-live">(LIVE)</span>
+        </strong>
       </div>
       <div class="hero-body">
         <p class="live-clock" id="live-clock">${formatIndiaDateTime()}</p>
         <p class="live-kicker">All in one Matka Result Today</p>
         <div class="live-grid">${rows}</div>
       </div>
-      <div class="hero-bar hero-bar--sub">
-        <strong>ALL IN ONE MATKA RESULT CHART</strong>
-      </div>
-      <p class="protect-badge">All in one Matka Result Protected</p>
     </section>
   `;
 }
@@ -231,14 +230,12 @@ function leakJodiBlock() {
   const phone = indiaPhone(state.contact);
   const rows = state.markets
     .map((market) => {
-      const time = toAmPm(market.result_time || market.r_time);
       const hindi = MARKET_HINDI[market.market_id] || market.market_name;
       return `
         <li>
           <span class="leak-dot"></span>
           <span class="leak-name">${escapeHtml(hindi)}</span>
-          <span class="leak-line"></span>
-          <strong>${escapeHtml(time)}</strong>
+          <strong class="leak-stars">*****</strong>
         </li>
       `;
     })
@@ -303,9 +300,17 @@ function monthlyTable(marketIds) {
 }
 
 function homeCharts() {
+  const today = istParts();
+  const monthName = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
+
   return `
+    ${telegramBlock()}
     <section class="panel" id="month-chart">
-      <h2 class="panel-bar">ALL IN ONE MATKA RESULT CHART</h2>
+      <h2 class="panel-bar">All in one Matka Result ${monthName} ${today.year}</h2>
+      <p class="protect-badge">All in one Matka Result Protected</p>
       ${monthlyTable(HOME_CHART_MARKETS)}
     </section>
   `;
@@ -398,9 +403,9 @@ function renderHome() {
   return `
     ${hindiIntro()}
     ${liveResultsBoard(state.markets)}
+    ${homeCharts()}
     ${telegramBlock()}
     ${leakJodiBlock()}
-    ${homeCharts()}
     ${recordCharts()}
   `;
 }
@@ -416,12 +421,15 @@ function renderYear() {
     <section class="hero-live">
       <div class="hero-bar">
         <p>BEST SITE MATKA RESULT !</p>
-        <strong>WWW.MATKAKING.COM</strong>
+        <strong>
+          <span class="neon-domain">WWW.MATKAKING.COM</span>
+          <span class="rgb-live">(LIVE)</span>
+        </strong>
       </div>
       <div class="hero-body">
         <p class="live-clock" id="live-clock">${formatIndiaDateTime()}</p>
         <p class="live-kicker">All in one Matka Result Today</p>
-        <h1>${escapeHtml(name)}</h1>
+        <h1>${escapeHtml(name)} <span class="rgb-live">(LIVE)</span></h1>
         <p class="live-num live-num--xl ${live ? "is-live" : "is-wait"}">${escapeHtml(jodi)}</p>
         <a class="text-link" href="#home">← Back to All in one Matka Result</a>
       </div>
