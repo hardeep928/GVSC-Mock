@@ -1,3 +1,7 @@
+const APP_URL = "https://gvsc.myaibusiness.online/";
+const TELEGRAM_URL = "https://t.me/+919929624882";
+const CONTACT_FALLBACK = "9929624882";
+
 const FALLBACK_MARKETS = [
   {
     market_id: "delhi-star-dl",
@@ -116,63 +120,138 @@ const CHART_MARKETS = FALLBACK_MARKETS.map((market) => ({
   name: market.market_name,
 }));
 
+const CHART_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015];
+
+const MONTH_LABELS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+const MARKET_HINDI = {
+  "delhi-star-dl": "दिल्ली स्टार-DL",
+  rawased: "रावसेद",
+  ilag: "इलाग",
+  "delhi-bazaar": "दिल्ली बाज़ार",
+  "shree-ganesh": "श्री गणेश",
+  faridabad: "फरीदाबाद",
+  ghaziabad: "गाज़ियाबाद",
+  gali: "गली",
+  ncr: "एनसीआर",
+  disawar: "दिसावर",
+};
+
+const HOME_CHART_MARKETS = CHART_MARKETS.map((market) => market.id);
+
+const SITE_COPY = {
+  intro:
+    "दोस्तों, MatkaKing.com पर आपका स्वागत है। यहाँ दिल्ली स्टार, रावसेद, इलाग, दिल्ली बाज़ार, श्री गणेश, फरीदाबाद, गाज़ियाबाद, गली, एनसीआर और दिसावर समेत सभी मार्केट के सबसे तेज़ और सही रिजल्ट मिलते हैं। ताज़ा रिजल्ट, लीक जोड़ी और पुराने चार्ट एक ही जगह देखें।",
+  yearIntro:
+    "MatkaKing.com पर इस मार्केट का पूरा साल चार्ट नीचे दिया गया है। हर तारीख और हर महीने का रिजल्ट एक साथ चेक करें। पुराने रिकॉर्ड और आज का लाइव रिजल्ट यहीं उपलब्ध है।",
+  about:
+    "All in one Matka Result भारत की तेज़ मटका रिजल्ट साइट है। MatkaKing.com पर आपको हर दिन के रिजल्ट, लीक जोड़ी और सालाना रिकॉर्ड चार्ट मिलते हैं। दिल्ली स्टार, रावसेद, इलाग, दिल्ली बाज़ार, श्री गणेश, फरीदाबाद, गाज़ियाबाद, गली, एनसीआर और दिसावर जैसे मार्केट के पुराने नंबर यहीं से चेक किए जा सकते हैं। चार्ट देखकर पिछले सालों के रिजल्ट का अंदाज़ा लगाया जा सकता है। जो दोस्त गेम खेलना चाहते हैं, वे GVSC ऐप खोलकर या डाउनलोड करके खेल सकते हैं। यह वेबसाइट जानकारी और चार्ट के लिए है। अपना मार्केट लिस्ट करवाने के लिए साइट पर दिए फॉर्म से संपर्क करें।",
+  appHindi: "गेम खेलना चाहते हैं? यहाँ टैप करें — GVSC ऐप खोलें या डाउनलोड करें।",
+  appEnglish: "Play or download the GVSC app",
+  formHindi: "अपना मार्केट लिस्ट करें",
+  formEnglish: "List your market",
+  footerAbout:
+    "MatkaKing.com पर आपका स्वागत है। हमारी वेबसाइट सबसे तेज़ मटका रिजल्ट साइटों में से एक है। 2018 से हम दिल्ली स्टार, रावसेद, इलाग, दिल्ली बाज़ार, श्री गणेश, फरीदाबाद, गाज़ियाबाद, गली, एनसीआर और दिसावर के रिजल्ट और चार्ट दिखा रहे हैं। पुराने रिकॉर्ड देखकर पिछले नंबरों का अंदाज़ा लगाया जा सकता है। गेम खेलने के लिए GVSC ऐप खोलें या डाउनलोड करें। अपना मार्केट लिस्ट करवाने के लिए फॉर्म से संपर्क करें।",
+  footerEnglish:
+    "All in one Matka Result is a popular live result board for markets such as Disawar, Gali, Faridabad, Gaziabad, Shree Ganesh and Delhi Bazaar. People check these charts every day across many parts of India. You can review old records here, and if you want to play you can open or download the GVSC app.",
+  privacy:
+    "MatkaKing.com केवल रिजल्ट और चार्ट की जानकारी दिखाता है। हम आपका फ़ोन नंबर या फॉर्म डेटा मार्केट लिस्टिंग के लिए ही इस्तेमाल करते हैं।",
+  disclaimer:
+    "यह वेबसाइट जानकारी और पुराने चार्ट के लिए है। गेम खेलना है तो GVSC ऐप का उपयोग करें। नतीजे समय के साथ अपडेट होते रहते हैं।",
+};
+
 function pad2(value) {
   return String(value).padStart(2, "0");
 }
 
-function formatChartDate(date) {
-  return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
+function hashSeed(year, monthIndex, day, marketIndex) {
+  let hash = 2166136261;
+  const parts = [year, monthIndex + 31, day + 17, marketIndex + 11, year * (day + 3)];
+  parts.forEach((part) => {
+    hash ^= part;
+    hash = Math.imul(hash, 16777619);
+  });
+  return (hash >>> 0) % 2147483646 + 1;
 }
 
 function seededRandom(seed) {
-  let value = seed;
+  let value = seed % 2147483647;
+  if (value <= 0) {
+    value += 2147483646;
+  }
+  value = (value * 16807) % 2147483647;
+  value = (value * 16807) % 2147483647;
   return function next() {
     value = (value * 16807) % 2147483647;
     return value / 2147483647;
   };
 }
 
-function makePana(rng) {
-  const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    .sort(() => rng() - 0.5)
-    .slice(0, 3)
-    .sort((a, b) => a - b);
-  return digits.join("");
-}
-
 function makeJodi(rng) {
   return pad2(Math.floor(rng() * 100));
 }
 
-function buildChartResults() {
-  const rows = [];
-  const today = new Date(2026, 8, 18);
-  let id = 1;
-
-  for (let day = 0; day < 18; day += 1) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - day);
-    const dateLabel = formatChartDate(date);
-
-    CHART_MARKETS.forEach((market, marketIndex) => {
-      const rng = seededRandom(20260918 + day * 97 + marketIndex * 13);
-      const jodi = makeJodi(rng);
-      rows.push({
-        id: id++,
-        date: dateLabel,
-        stamp: date.getTime(),
-        marketId: market.id,
-        marketName: market.name,
-        result: `${makePana(rng)}-${jodi}-${makePana(rng)}`,
-        jodi,
-      });
-    });
-  }
-
-  return rows;
+function istParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    weekday: "short",
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    hour: map.hour,
+    minute: map.minute,
+    dayPeriod: (map.dayPeriod || "").toUpperCase(),
+  };
 }
 
-const CHART_RESULTS = buildChartResults();
+function formatIndiaDateTime(date = new Date()) {
+  const parts = istParts(date);
+  const monthName = new Intl.DateTimeFormat("en-IN", {
+    month: "long",
+    timeZone: "Asia/Kolkata",
+  }).format(date);
+  return `${parts.day} ${monthName} ${parts.year}, ${parts.hour}:${parts.minute} ${parts.dayPeriod}`;
+}
+
+function daysInMonth(year, monthIndex) {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+function compareDate(year, monthIndex, day, today) {
+  const left = year * 10000 + (monthIndex + 1) * 100 + day;
+  const right = today.year * 10000 + today.month * 100 + today.day;
+  return left - right;
+}
+
+function mockJodi(marketIndex, year, monthIndex, day) {
+  const rng = seededRandom(hashSeed(year, monthIndex, day, marketIndex));
+  return makeJodi(rng);
+}
+
+function chartCell(marketIndex, year, monthIndex, day, liveValue) {
+  const today = istParts();
+  if (day > daysInMonth(year, monthIndex)) {
+    return "";
+  }
+
+  const diff = compareDate(year, monthIndex, day, today);
+  if (diff > 0) {
+    return "-";
+  }
+  if (diff === 0) {
+    return liveValue && liveValue !== "**" ? liveValue : "**";
+  }
+  return mockJodi(marketIndex, year, monthIndex, day);
+}
 
 const LEAK_JODI = CHART_MARKETS.map((market, index) => {
   const rng = seededRandom(91001 + index * 17);
@@ -180,7 +259,7 @@ const LEAK_JODI = CHART_MARKETS.map((market, index) => {
   return {
     marketId: market.id,
     marketName: market.name,
-    date: "18-09-2026",
+    date: "19-09-2026",
     jodi,
     openLeak: jodi[0],
     closeLeak: jodi[1],

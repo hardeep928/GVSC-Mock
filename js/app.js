@@ -1,30 +1,23 @@
 const MARKETS_API = "https://admin.gvsc.myaibusiness.online/api/market_lists";
 const SETTINGS_API = "https://admin.gvsc.myaibusiness.online/api/getSetting";
 const OPEN_RESULT = "**";
-const CONTACT_FALLBACK = "9929624882";
-
-const START_KEYS = ["o_start_time", "open_time", "start_time", "o_start", "open_start_time"];
-const OPEN_CLOSE_KEYS = ["o_end_time", "open_end_time", "open_close_time"];
-const CLOSE_START_KEYS = ["c_start_time", "close_start_time"];
-const CLOSE_END_KEYS = ["c_end_time", "close_time", "end_time", "close_end_time"];
-const RESULT_TIME_KEYS = ["result_time", "r_time"];
 
 const state = {
-  page: "markets",
-  chartMarket: "all",
-  chartDate: "all",
-  chartPage: 1,
-  chartPageSize: 10,
-  markets: [],
-  marketsLoading: true,
+  page: "home",
+  chartMarket: "",
+  chartYear: 2026,
+  markets: FALLBACK_MARKETS.slice(),
   contact: CONTACT_FALLBACK,
-  formNotice: "",
+  telegram: TELEGRAM_URL,
+  scrollTo: "",
 };
 
 const app = document.getElementById("app");
-const sidebar = document.getElementById("sidebar");
-const backdrop = document.getElementById("backdrop");
-const menuToggle = document.getElementById("menu-toggle");
+const drawer = document.getElementById("market-drawer");
+const backdrop = document.getElementById("drawer-backdrop");
+const formNotice = document.getElementById("form-notice");
+const callLink = document.getElementById("call-link");
+const waLink = document.getElementById("wa-link");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -32,83 +25,6 @@ function escapeHtml(value) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-function pickField(item, keys) {
-  for (const key of keys) {
-    if (item[key] !== undefined && item[key] !== null && String(item[key]).trim() !== "") {
-      return item[key];
-    }
-  }
-  return "";
-}
-
-function toAmPm(time) {
-  if (!time) {
-    return "-";
-  }
-
-  const parts = String(time).split(":");
-  const hour = Number(parts[0]);
-  const minute = (parts[1] || "00").slice(0, 2);
-
-  if (Number.isNaN(hour)) {
-    return String(time);
-  }
-
-  const suffix = hour >= 12 ? "PM" : "AM";
-  const hour12 = hour % 12 || 12;
-  return `${String(hour12).padStart(2, "0")}:${minute} ${suffix}`;
-}
-
-function middleResult(result) {
-  const value = String(result || "").trim();
-  if (!value || value === "**" || value === "*** ** ***") {
-    return OPEN_RESULT;
-  }
-
-  const parts = value.replace(/[-_+]/g, " ").split(/\s+/).filter(Boolean);
-  if (parts.length >= 3) {
-    return parts[1];
-  }
-  if (parts.length === 2) {
-    return parts.find((part) => part.length === 2) || parts[1];
-  }
-  if (parts[0] && parts[0].length <= 2) {
-    return parts[0];
-  }
-  return OPEN_RESULT;
-}
-
-function resultPartsHtml(result) {
-  return `<span class="result-part result-part--1">${escapeHtml(middleResult(result))}</span>`;
-}
-
-function toIsoDate(displayDate) {
-  if (!displayDate || displayDate === "all") {
-    return "";
-  }
-  const [day, month, year] = String(displayDate).split("-");
-  if (!year || !month || !day) {
-    return "";
-  }
-  return `${year}-${month}-${day}`;
-}
-
-function fromIsoDate(isoDate) {
-  if (!isoDate) {
-    return "all";
-  }
-  const [year, month, day] = String(isoDate).split("-");
-  return `${day}-${month}-${year}`;
-}
-
-function chartIsoRange() {
-  const dates = CHART_RESULTS.map((row) => toIsoDate(row.date)).filter(Boolean).sort();
-  return {
-    min: dates[0] || "",
-    max: dates[dates.length - 1] || "",
-  };
 }
 
 function nameSlug(name) {
@@ -132,417 +48,467 @@ function indiaPhone(number) {
   return digits;
 }
 
-function closeSidebar() {
-  sidebar.classList.remove("is-open");
-  backdrop.classList.remove("is-open");
+function middleResult(result) {
+  const value = String(result || "").trim();
+  if (!value || value === "**" || value === "*** ** ***") {
+    return OPEN_RESULT;
+  }
+
+  const parts = value.replace(/[-_+]/g, " ").split(/\s+/).filter(Boolean);
+  if (parts.length >= 3) {
+    return parts[1];
+  }
+  if (parts.length === 2) {
+    return parts.find((part) => part.length === 2) || parts[1];
+  }
+  if (parts[0] && parts[0].length <= 2) {
+    return parts[0];
+  }
+  return OPEN_RESULT;
 }
 
-function setActiveNav() {
-  document.querySelectorAll(".side-nav a").forEach((link) => {
-    link.classList.toggle("is-active", link.dataset.page === state.page);
-  });
+function findMarket(idOrName) {
+  const sel = String(idOrName || "").toLowerCase();
+  return (
+    state.markets.find(
+      (market) =>
+        String(market.market_id).toLowerCase() === sel ||
+        nameSlug(market.market_name) === sel
+    ) ||
+    CHART_MARKETS.find((market) => market.id === sel) ||
+    null
+  );
+}
+
+function marketIndex(id) {
+  const idx = CHART_MARKETS.findIndex((market) => market.id === id);
+  return idx >= 0 ? idx : 0;
+}
+
+function liveJodi(marketId) {
+  const market = findMarket(marketId);
+  if (!market || !market.result) {
+    return OPEN_RESULT;
+  }
+  return middleResult(market.result);
+}
+
+function marketDisplayName(id) {
+  const live = findMarket(id);
+  if (live && live.market_name) {
+    return live.market_name;
+  }
+  const chart = CHART_MARKETS.find((market) => market.id === id);
+  return chart ? chart.name : id;
 }
 
 function parseRoute() {
-  const hash = (location.hash || "#markets").replace("#", "");
-  const [page, param] = hash.split("/");
-  const known = ["markets", "chart", "leak-jodi", "list-market"];
-  state.page = known.includes(page) ? page : "markets";
+  const hash = (location.hash || "#home").replace("#", "");
+  const [page, market, year] = hash.split("/");
 
-  if (state.page === "chart") {
-    const nextMarket = param ? decodeURIComponent(param) : "all";
-    if (nextMarket !== state.chartMarket) {
-      state.chartMarket = nextMarket;
-      state.chartPage = 1;
-    }
+  if (page === "leak-jodi" || page === "month-chart") {
+    state.page = "home";
+    state.scrollTo = page;
+    return;
+  }
+
+  if (page === "list-market") {
+    state.page = "home";
+    openDrawer();
+    return;
+  }
+
+  if (["privacy", "disclaimer", "about", "sitemap"].includes(page)) {
+    state.page = page;
+    return;
+  }
+
+  if (page === "chart" && market) {
+    state.page = "year";
+    state.chartMarket = decodeURIComponent(market);
+    state.chartYear = Number(year) || 2026;
+    return;
+  }
+
+  state.page = "home";
+}
+
+function updateContactLinks() {
+  const phone = indiaPhone(state.contact);
+  if (callLink) {
+    callLink.href = `tel:+${phone}`;
+    callLink.textContent = `Call ${state.contact}`;
+  }
+  if (waLink) {
+    waLink.href = `https://wa.me/${phone}`;
   }
 }
 
-function goChart(marketId) {
-  state.chartMarket = marketId || "all";
-  state.chartPage = 1;
-  location.hash =
-    marketId && marketId !== "all" ? `#chart/${encodeURIComponent(marketId)}` : "#chart";
+function openDrawer() {
+  drawer.classList.add("is-open");
+  backdrop.classList.add("is-open");
+  drawer.setAttribute("aria-hidden", "false");
+  document.body.classList.add("drawer-open");
 }
 
-function timings(market) {
-  return [
-    { label: "Start", value: toAmPm(pickField(market, START_KEYS)) },
-    { label: "Close", value: toAmPm(pickField(market, OPEN_CLOSE_KEYS)) },
-    { label: "Open Start", value: toAmPm(pickField(market, START_KEYS)) },
-    { label: "Open Close", value: toAmPm(pickField(market, OPEN_CLOSE_KEYS)) },
-    { label: "Close Start", value: toAmPm(pickField(market, CLOSE_START_KEYS)) },
-    { label: "Close End", value: toAmPm(pickField(market, CLOSE_END_KEYS)) },
-    { label: "Result Time", value: toAmPm(pickField(market, RESULT_TIME_KEYS)) },
-  ].filter((item) => item.value !== "-");
-}
-
-function renderMarkets() {
-  if (state.marketsLoading) {
-    return `
-      <section class="page">
-        <div class="page-head">
-          <p class="eyebrow">Live board</p>
-          <h1>All Markets</h1>
-        </div>
-        <p class="empty-note">Loading markets...</p>
-      </section>
-    `;
+function closeDrawer() {
+  drawer.classList.remove("is-open");
+  backdrop.classList.remove("is-open");
+  drawer.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("drawer-open");
+  if ((location.hash || "").replace("#", "") === "list-market") {
+    history.replaceState(null, "", "#home");
   }
+}
 
-  const cards = state.markets
+function toAmPm(time) {
+  if (!time) {
+    return "-";
+  }
+  const parts = String(time).split(":");
+  const hour = Number(parts[0]);
+  const minute = (parts[1] || "00").slice(0, 2);
+  if (Number.isNaN(hour)) {
+    return String(time);
+  }
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minute} ${suffix}`;
+}
+
+function hindiIntro(extra) {
+  return `
+    <section class="copy-block">
+      <p>${SITE_COPY.intro}</p>
+      ${extra ? `<p>${extra}</p>` : ""}
+    </section>
+  `;
+}
+
+function telegramBlock() {
+  return `
+    <a class="telegram-btn" href="${escapeHtml(state.telegram)}" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.04 15.3 8.9 19.1c.3 0 .44-.13.6-.3l1.44-1.38 2.98 2.18c.55.3.94.14 1.1-.5l2-9.4c.18-.82-.3-1.14-.83-.94L5.1 11.3c-.8.3-.79.76-.14.96l3.46 1.08 8.04-5.06c.38-.23.72-.1.44.15z"/></svg>
+      <span>Join Telegram / टेलीग्राम जॉइन करें</span>
+    </a>
+  `;
+}
+
+function liveResultsBoard(markets) {
+  const rows = markets
     .map((market) => {
-      const running = market.running_status === true;
-      const id = nameSlug(market.market_name);
-      const timeItems = timings(market)
-        .map(
-          (item) => `
-            <div class="time-chip">
-              <span>${item.label}</span>
-              <strong>${item.value}</strong>
-            </div>
-          `
-        )
-        .join("");
-
+      const jodi = middleResult(market.result);
+      const live = jodi !== OPEN_RESULT;
       return `
-        <article class="market-card ${running ? "is-running" : "is-closed"}">
-          <div class="market-top">
-            <div>
-              <h2>${escapeHtml(market.market_name || "Market")}</h2>
-              <span class="status-pill">${running ? "Open" : "Closed"}</span>
-            </div>
-            <button class="ghost-btn" type="button" data-chart="${id}">View Chart</button>
-          </div>
-          <div class="market-result">${resultPartsHtml(market.result)}</div>
-          <div class="time-grid">${timeItems}</div>
+        <article class="live-item">
+          <h2>${escapeHtml(market.market_name)}</h2>
+          <p class="live-num ${live ? "is-live" : "is-wait"}">${escapeHtml(jodi)}</p>
         </article>
       `;
     })
     .join("");
 
   return `
-    <section class="page">
-      <div class="page-head">
-        <p class="eyebrow">Information board</p>
-        <h1>All Markets</h1>
-        <p>Market names, start and close timings, and today's result. This is an information website only — there is no Play Now option here.</p>
+    <section class="hero-live" id="live-results">
+      <div class="hero-bar">
+        <p>BEST SITE MATKA RESULT !</p>
+        <strong>WWW.MATKAKING.COM</strong>
       </div>
-      <div class="market-grid">${cards}</div>
+      <div class="hero-body">
+        <p class="live-clock" id="live-clock">${formatIndiaDateTime()}</p>
+        <p class="live-kicker">All in one Matka Result Today</p>
+        <div class="live-grid">${rows}</div>
+      </div>
+      <div class="hero-bar hero-bar--sub">
+        <strong>ALL IN ONE MATKA RESULT CHART</strong>
+      </div>
+      <p class="protect-badge">All in one Matka Result Protected</p>
     </section>
   `;
 }
 
-function matchesMarket(row, selected) {
-  if (!selected || selected === "all") {
-    return true;
-  }
-  const sel = String(selected).toLowerCase();
-  return (
-    String(row.marketId).toLowerCase() === sel ||
-    nameSlug(row.marketName) === sel ||
-    row.marketName.toLowerCase() === sel
-  );
-}
-
-function filteredChartRows() {
-  return CHART_RESULTS.filter((row) => {
-    const marketOk = matchesMarket(row, state.chartMarket);
-    const dateOk = state.chartDate === "all" || row.date === state.chartDate;
-    return marketOk && dateOk;
-  });
-}
-
-function renderChart() {
-  const rows = filteredChartRows();
-  const total = rows.length;
-  const size = state.chartPageSize;
-  const pages = Math.max(1, Math.ceil(total / size));
-  if (state.chartPage > pages) {
-    state.chartPage = pages;
-  }
-
-  const start = (state.chartPage - 1) * size;
-  const pageRows = rows.slice(start, start + size);
-  const range = chartIsoRange();
-  const marketOptions = [
-    `<option value="all"${state.chartMarket === "all" ? " selected" : ""}>All Markets</option>`,
-    ...CHART_MARKETS.map(
-      (market) =>
-        `<option value="${market.id}"${state.chartMarket === market.id ? " selected" : ""}>${market.name}</option>`
-    ),
-  ].join("");
-
-  const tableRows = pageRows
-    .map(
-      (row) => `
-        <tr>
-          <td>${row.date}</td>
-          <td>${row.marketName}</td>
-          <td class="result-cell">${resultPartsHtml(row.result)}</td>
-        </tr>
-      `
-    )
-    .join("");
-
-  const visiblePages = [];
-  for (let page = 1; page <= pages; page += 1) {
-    if (page === 1 || page === pages || Math.abs(page - state.chartPage) <= 2) {
-      visiblePages.push(page);
-    } else if (visiblePages[visiblePages.length - 1] !== "gap") {
-      visiblePages.push("gap");
-    }
-  }
-  const pageButtons = visiblePages
-    .map((page) =>
-      page === "gap"
-        ? `<span class="page-gap">...</span>`
-        : `<button type="button" class="page-btn${page === state.chartPage ? " is-active" : ""}" data-page-number="${page}">${page}</button>`
-    )
-    .join("");
-
-  return `
-    <section class="page">
-      <div class="page-head">
-        <p class="eyebrow">Old results</p>
-        <h1>Market Chart</h1>
-        <p>Latest results stay on top. Filter by market, then choose how many rows to show. Client results can replace this sample data later.</p>
-      </div>
-
-      <div class="toolbar">
-        <label>
-          Market
-          <select id="chart-market">${marketOptions}</select>
-        </label>
-        <label>
-          Date
-          <span class="date-field">
-            <input id="chart-date" type="date" value="${toIsoDate(state.chartDate)}" min="${range.min}" max="${range.max}">
-            <button type="button" class="clear-date" id="chart-date-clear"${state.chartDate === "all" ? " disabled" : ""}>Clear</button>
-          </span>
-        </label>
-        <label>
-          Show
-          <select id="chart-size">
-            <option value="10"${size === 10 ? " selected" : ""}>10</option>
-            <option value="40"${size === 40 ? " selected" : ""}>40</option>
-            <option value="100"${size === 100 ? " selected" : ""}>100</option>
-          </select>
-        </label>
-        <p class="toolbar-meta">Showing ${total ? start + 1 : 0}-${Math.min(start + size, total)} of ${total}</p>
-      </div>
-
-      <div class="table-wrap">
-        <table class="chart-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Market</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${
-              tableRows ||
-              `<tr><td colspan="3" class="empty-note">No chart data for this market yet.</td></tr>`
-            }
-          </tbody>
-        </table>
-      </div>
-      <div class="chart-cards">
-        ${
-          pageRows
-            .map(
-              (row) => `
-                <article class="chart-card">
-                  <div>
-                    <strong>${row.marketName}</strong>
-                    <span>${row.date}</span>
-                  </div>
-                  <div class="result-cell">${resultPartsHtml(row.result)}</div>
-                </article>
-              `
-            )
-            .join("") || `<p class="empty-note">No chart data for this market yet.</p>`
-        }
-      </div>
-
-      <div class="pagination">
-        <button type="button" data-page-number="${Math.max(1, state.chartPage - 1)}"${state.chartPage === 1 ? " disabled" : ""}>Prev</button>
-        <div class="page-list">${pageButtons}</div>
-        <button type="button" data-page-number="${Math.min(pages, state.chartPage + 1)}"${state.chartPage === pages ? " disabled" : ""}>Next</button>
-      </div>
-    </section>
-  `;
-}
-
-function renderLeakJodi() {
-  const cards = LEAK_JODI.map(
-    (item) => `
-      <article class="leak-card">
-        <div class="leak-top">
-          <h2>${item.marketName}</h2>
-          <span>${item.tag}</span>
-        </div>
-        <p class="leak-date">${item.date}</p>
-        <p class="leak-jodi">${item.jodi}</p>
-        <div class="leak-meta">
-          <span>Open ${item.openLeak}</span>
-          <span>Close ${item.closeLeak}</span>
-        </div>
-      </article>
-    `
-  ).join("");
-
-  return `
-    <section class="page">
-      <div class="page-head">
-        <p class="eyebrow">Today's leak</p>
-        <h1>Leak Jodi</h1>
-        <p>Sample leak jodi board for each listed market. Swap these numbers when the client sends the live list.</p>
-      </div>
-      <div class="leak-grid">${cards}</div>
-    </section>
-  `;
-}
-
-function renderListMarket() {
+function leakJodiBlock() {
   const phone = indiaPhone(state.contact);
-  const notice = state.formNotice ? `<p class="form-success">${state.formNotice}</p>` : "";
+  const rows = state.markets
+    .map((market) => {
+      const time = toAmPm(market.result_time || market.r_time);
+      const hindi = MARKET_HINDI[market.market_id] || market.market_name;
+      return `
+        <li>
+          <span class="leak-dot"></span>
+          <span class="leak-name">${escapeHtml(hindi)}</span>
+          <span class="leak-line"></span>
+          <strong>${escapeHtml(time)}</strong>
+        </li>
+      `;
+    })
+    .join("");
 
   return `
-    <section class="page">
-      <div class="page-head">
-        <p class="eyebrow">Partnership</p>
-        <h1>List Your Market</h1>
-        <p>Send a request to add your market, or contact the team directly on the number.</p>
-      </div>
-
-      <div class="split">
-        <form class="market-form" id="market-form">
-          ${notice}
-          <label>Full name<input name="name" required placeholder="Your name"></label>
-          <label>Mobile number<input name="phone" required placeholder="10 digit number"></label>
-          <label>Market name<input name="market" required placeholder="Market you want to list"></label>
-          <label>City / area<input name="city" placeholder="City"></label>
-          <label>Message<textarea name="message" rows="4" placeholder="Timings, result window, or anything we should know"></textarea></label>
-          <button class="gold-btn" type="submit">Send request</button>
-        </form>
-
-        <aside class="contact-card">
-          <h2>Contact on number</h2>
-          <p>Prefer a call or WhatsApp? Reach the team here.</p>
-          <a class="gold-btn" href="tel:+${phone}">Call ${state.contact}</a>
-          <a class="ghost-btn whatsapp-btn" href="https://wa.me/${phone}" target="_blank" rel="noopener noreferrer">
-            <img src="assets/whatsapp.png" alt=""> WhatsApp
-          </a>
-        </aside>
+    <section class="leak-board" id="leak-jodi">
+      <h2>LEAK JODI</h2>
+      <ul class="leak-times">${rows}</ul>
+      <p class="leak-rate">Rate : 10 के 950</p>
+      <p class="leak-fast">Fast service</p>
+      <div class="leak-actions">
+        <a class="whatsapp-pill" href="https://wa.me/${phone}" target="_blank" rel="noopener noreferrer">
+          <img src="assets/whatsapp.png" alt=""> WhatsApp
+        </a>
+        <a class="telegram-pill" href="${escapeHtml(state.telegram)}" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.04 15.3 8.9 19.1c.3 0 .44-.13.6-.3l1.44-1.38 2.98 2.18c.55.3.94.14 1.1-.5l2-9.4c.18-.82-.3-1.14-.83-.94L5.1 11.3c-.8.3-.79.76-.14.96l3.46 1.08 8.04-5.06c.38-.23.72-.1.44.15z"/></svg>
+          Telegram
+        </a>
       </div>
     </section>
   `;
 }
 
-function bindChartControls() {
-  const marketSelect = document.getElementById("chart-market");
-  const dateSelect = document.getElementById("chart-date");
-  const sizeSelect = document.getElementById("chart-size");
+function monthlyTable(marketIds) {
+  const today = istParts();
+  const year = today.year;
+  const monthIndex = today.month - 1;
+  const totalDays = daysInMonth(year, monthIndex);
+  const heads = marketIds
+    .map((id) => `<th>${escapeHtml(marketDisplayName(id))}</th>`)
+    .join("");
 
-  if (marketSelect) {
-    marketSelect.addEventListener("change", () => goChart(marketSelect.value));
+  const rows = [];
+  for (let day = 1; day <= totalDays; day += 1) {
+    const cells = marketIds
+      .map((id) => {
+        const value = chartCell(marketIndex(id), year, monthIndex, day, liveJodi(id));
+        const pending = value === "**" || value === "-";
+        const live = !pending && value !== "";
+        return `<td class="${pending ? "is-pending" : ""} ${live ? "is-hit" : ""}">${escapeHtml(value)}</td>`;
+      })
+      .join("");
+    const dateLabel = `${pad2(day)}-${pad2(monthIndex + 1)}-${year}`;
+    const isToday = day === today.day && year === today.year && monthIndex === today.month - 1;
+    rows.push(`<tr class="${isToday ? "is-today" : ""}"><th>${dateLabel}</th>${cells}</tr>`);
   }
 
-  if (dateSelect) {
-    dateSelect.addEventListener("change", () => {
-      state.chartDate = fromIsoDate(dateSelect.value);
-      state.chartPage = 1;
-      render();
-    });
-  }
-
-  const clearDate = document.getElementById("chart-date-clear");
-  if (clearDate) {
-    clearDate.addEventListener("click", () => {
-      state.chartDate = "all";
-      state.chartPage = 1;
-      render();
-    });
-  }
-
-  if (sizeSelect) {
-    sizeSelect.addEventListener("change", () => {
-      state.chartPageSize = Number(sizeSelect.value);
-      state.chartPage = 1;
-      render();
-    });
-  }
+  return `
+    <div class="table-wrap">
+      <table class="result-table">
+        <thead>
+          <tr>
+            <th>DATE</th>
+            ${heads}
+          </tr>
+        </thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+    </div>
+  `;
 }
 
-function render() {
+function homeCharts() {
+  return `
+    <section class="panel" id="month-chart">
+      <h2 class="panel-bar">ALL IN ONE MATKA RESULT CHART</h2>
+      ${monthlyTable(HOME_CHART_MARKETS)}
+    </section>
+  `;
+}
+
+function recordCharts() {
+  const blocks = CHART_YEARS.map((year) => {
+    const links = CHART_MARKETS.map(
+      (market) => `
+        <a href="#chart/${encodeURIComponent(market.id)}/${year}">
+          ${escapeHtml(market.name)} ${year}
+        </a>
+      `
+    ).join("");
+
+    return `
+      <section class="panel record-panel">
+        <h2 class="panel-bar">ALL IN ONE MATKA RESULT CHART ${year}</h2>
+        <div class="record-list">${links}</div>
+      </section>
+    `;
+  }).join("");
+
+  return `<div id="record-charts">${blocks}</div>`;
+}
+
+function yearTable(marketId, year) {
+  const index = marketIndex(marketId);
+  const today = istParts();
+  const heads = MONTH_LABELS.map((label) => `<th>${label}</th>`).join("");
+  const rows = [];
+
+  for (let day = 1; day <= 31; day += 1) {
+    const cells = MONTH_LABELS.map((_, monthIndex) => {
+      const value = chartCell(index, year, monthIndex, day, liveJodi(marketId));
+      const pending = value === "**" || value === "-" || value === "";
+      const isToday = year === today.year && monthIndex === today.month - 1 && day === today.day;
+      return `<td class="${pending ? "is-pending" : ""} ${isToday ? "is-today" : ""}">${escapeHtml(value)}</td>`;
+    }).join("");
+    rows.push(`<tr><th>${day}</th>${cells}</tr>`);
+  }
+
+  return `
+    <div class="table-wrap">
+      <table class="result-table year-table">
+        <thead>
+          <tr>
+            <th>DATE</th>
+            ${heads}
+          </tr>
+        </thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderLegal(title, body) {
+  return `
+    <article class="legal-page">
+      <a class="text-link" href="#home">← Back to All in one Matka Result</a>
+      <h1>${title}</h1>
+      <p>${body}</p>
+    </article>
+  `;
+}
+
+function renderSitemap() {
+  const yearLinks = CHART_YEARS.map(
+    (year) => `<a href="#home">Record Chart ${year}</a>`
+  ).join("");
+  return `
+    <article class="legal-page">
+      <a class="text-link" href="#home">← Back to All in one Matka Result</a>
+      <h1>Sitemap</h1>
+      <div class="sitemap-list">
+        <a href="#home">Home / Live Result</a>
+        <a href="#leak-jodi">Leak Jodi</a>
+        <a href="#month-chart">All in one Matka Result Chart</a>
+        <a href="#about">About Us</a>
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#disclaimer">Disclaimer</a>
+        ${yearLinks}
+      </div>
+    </article>
+  `;
+}
+
+function renderHome() {
+  return `
+    ${hindiIntro()}
+    ${liveResultsBoard(state.markets)}
+    ${telegramBlock()}
+    ${leakJodiBlock()}
+    ${homeCharts()}
+    ${recordCharts()}
+  `;
+}
+
+function renderYear() {
+  const name = marketDisplayName(state.chartMarket);
+  const jodi = liveJodi(state.chartMarket);
+  const year = CHART_YEARS.includes(state.chartYear) ? state.chartYear : 2026;
+  const live = jodi !== OPEN_RESULT;
+
+  return `
+    ${hindiIntro(SITE_COPY.yearIntro)}
+    <section class="hero-live">
+      <div class="hero-bar">
+        <p>BEST SITE MATKA RESULT !</p>
+        <strong>WWW.MATKAKING.COM</strong>
+      </div>
+      <div class="hero-body">
+        <p class="live-clock" id="live-clock">${formatIndiaDateTime()}</p>
+        <p class="live-kicker">All in one Matka Result Today</p>
+        <h1>${escapeHtml(name)}</h1>
+        <p class="live-num live-num--xl ${live ? "is-live" : "is-wait"}">${escapeHtml(jodi)}</p>
+        <a class="text-link" href="#home">← Back to All in one Matka Result</a>
+      </div>
+      <div class="hero-bar hero-bar--sub">
+        <strong>ALL IN ONE MATKA RESULT CHART</strong>
+      </div>
+    </section>
+    ${telegramBlock()}
+    <section class="panel">
+      <h2 class="panel-bar">${escapeHtml(name)} RECORD CHART ${year}</h2>
+      ${yearTable(state.chartMarket, year)}
+    </section>
+    ${recordCharts()}
+  `;
+}
+
+function bindClock() {
+  const clock = document.getElementById("live-clock");
+  if (!clock) {
+    return;
+  }
+  clock.textContent = formatIndiaDateTime();
+}
+
+function render(options = {}) {
   parseRoute();
-  setActiveNav();
-
-  if (state.page === "chart") {
-    app.innerHTML = renderChart();
-    bindChartControls();
-    return;
+  if (state.page === "year") {
+    app.innerHTML = renderYear();
+  } else if (state.page === "privacy") {
+    app.innerHTML = renderLegal("Privacy Policy", SITE_COPY.privacy);
+  } else if (state.page === "disclaimer") {
+    app.innerHTML = renderLegal("Disclaimer", SITE_COPY.disclaimer);
+  } else if (state.page === "about") {
+    app.innerHTML = renderLegal("About Us", SITE_COPY.footerAbout);
+  } else if (state.page === "sitemap") {
+    app.innerHTML = renderSitemap();
+  } else {
+    app.innerHTML = renderHome();
   }
-
-  if (state.page === "leak-jodi") {
-    app.innerHTML = renderLeakJodi();
-    return;
+  bindClock();
+  if (state.scrollTo) {
+    document.getElementById(state.scrollTo)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    state.scrollTo = "";
+  } else if (options.scrollTop) {
+    window.scrollTo(0, 0);
   }
-
-  if (state.page === "list-market") {
-    app.innerHTML = renderListMarket();
-    return;
-  }
-
-  app.innerHTML = renderMarkets();
 }
 
-app.addEventListener("click", (event) => {
-  const chartBtn = event.target.closest("[data-chart]");
-  if (chartBtn) {
-    goChart(chartBtn.dataset.chart);
-    return;
-  }
-
-  const pageBtn = event.target.closest("[data-page-number]");
-  if (pageBtn && !pageBtn.disabled) {
-    state.chartPage = Number(pageBtn.dataset.pageNumber);
-    render();
+document.getElementById("open-form").addEventListener("click", openDrawer);
+document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+backdrop.addEventListener("click", closeDrawer);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeDrawer();
   }
 });
 
-app.addEventListener("submit", (event) => {
-  const form = event.target.closest("#market-form");
-  if (!form) {
-    return;
-  }
-
+document.getElementById("market-form").addEventListener("submit", (event) => {
   event.preventDefault();
+  const form = event.currentTarget;
   const data = new FormData(form);
   const phone = indiaPhone(state.contact);
   const text = encodeURIComponent(
-    `GVSC market listing request\nName: ${data.get("name")}\nPhone: ${data.get("phone")}\nMarket: ${data.get("market")}\nCity: ${data.get("city") || "-"}\nMessage: ${data.get("message") || "-"}`
+    `All in one Matka Result market listing request\nName: ${data.get("name")}\nPhone: ${data.get("phone")}\nMarket: ${data.get("market")}\nCity: ${data.get("city") || "-"}\nMessage: ${data.get("message") || "-"}`
   );
 
-  state.formNotice = "Request ready. Finish sending it on WhatsApp, or call the number beside the form.";
-  render();
+  formNotice.hidden = false;
+  formNotice.textContent =
+    "Request ready. Finish sending it on WhatsApp, or call the number below.";
   window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener,noreferrer");
 });
 
-menuToggle.addEventListener("click", () => {
-  sidebar.classList.toggle("is-open");
-  backdrop.classList.toggle("is-open");
+window.addEventListener("hashchange", () => render({ scrollTop: true }));
+setInterval(bindClock, 30000);
+
+document.getElementById("refresh-page")?.addEventListener("click", () => {
+  location.reload();
 });
 
-backdrop.addEventListener("click", closeSidebar);
-document.querySelectorAll(".side-nav a").forEach((link) => {
-  link.addEventListener("click", closeSidebar);
-});
-
-window.addEventListener("hashchange", render);
+function stampUpdated() {
+  const node = document.getElementById("last-updated");
+  if (node) {
+    node.textContent = `Last Updated: ${formatIndiaDateTime()}`;
+  }
+}
+stampUpdated();
+setInterval(stampUpdated, 30000);
 
 async function loadSettings() {
   try {
@@ -550,15 +516,16 @@ async function loadSettings() {
     const data = await response.json();
     const settings = data.data || {};
     state.contact = settings.contact_no || settings.telegram_no || CONTACT_FALLBACK;
+    if (settings.telegram_url || settings.telegram) {
+      state.telegram = settings.telegram_url || settings.telegram;
+    }
   } catch (error) {
     state.contact = CONTACT_FALLBACK;
   }
+  updateContactLinks();
 }
 
 async function loadMarkets() {
-  state.marketsLoading = true;
-  render();
-
   try {
     const response = await fetch(MARKETS_API, {
       method: "GET",
@@ -567,15 +534,16 @@ async function loadMarkets() {
     });
     const data = await response.json();
     const list = Array.isArray(data.data) ? data.data : [];
-    state.markets = data.status !== 0 && list.length ? list : FALLBACK_MARKETS;
+    if (data.status !== 0 && list.length) {
+      state.markets = list;
+      render();
+    }
   } catch (error) {
-    state.markets = FALLBACK_MARKETS;
+    state.markets = FALLBACK_MARKETS.slice();
   }
-
-  state.marketsLoading = false;
-  render();
 }
 
-loadSettings().then(render);
+updateContactLinks();
+loadSettings();
 loadMarkets();
-render();
+render({ scrollTop: true });
