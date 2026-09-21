@@ -55,11 +55,19 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 14px 16px 12px;
+  padding: 10px 16px 8px;
   background: var(--header);
   color: var(--title);
   text-align: center;
   border-bottom: 4px solid var(--bar);
+}
+
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .site-title {
@@ -68,6 +76,12 @@ textarea {
   letter-spacing: 0.06em;
   line-height: 1.05;
   animation: gold-pulse 2s ease-in-out infinite;
+}
+
+.site-logo {
+  height: clamp(42px, 8vw, 70px);
+  width: auto;
+  display: block;
 }
 
 .hero-bar {
@@ -141,6 +155,78 @@ textarea {
   width: 100%;
   margin: 0;
   padding: 12px 10px 28px;
+}
+
+.promo-ticker {
+  display: block;
+  overflow: hidden;
+  position: relative;
+  margin: 0 0 14px;
+  padding: 12px 0;
+  border-radius: 12px;
+  border: 1px solid #ffe082;
+  background: linear-gradient(90deg, #7f1d1d, #c2410c, #ea580c, #ca8a04, #ea580c, #c2410c, #7f1d1d);
+  background-size: 220% 100%;
+  color: #fff7ed;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.03em;
+  box-shadow:
+    0 0 0 1px rgba(253, 224, 71, 0.35),
+    0 8px 22px rgba(234, 88, 12, 0.32);
+  animation: shine 3.2s linear infinite;
+}
+
+.promo-ticker::before,
+.promo-ticker::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 42px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.promo-ticker::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(127, 29, 29, 0.95), transparent);
+}
+
+.promo-ticker::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(127, 29, 29, 0.95), transparent);
+}
+
+.promo-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-rtl 18s linear infinite;
+}
+
+.promo-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 28px;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 0 12px rgba(255, 211, 78, 0.45);
+}
+
+.promo-ticker-item::before {
+  content: "◆";
+  color: #fde047;
+  font-size: 0.72em;
+  animation: gold-pulse 1.4s ease-in-out infinite;
+}
+
+.promo-ticker-item b {
+  color: #fff;
+  font-size: 1.08em;
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 0 8px #39ff14,
+    0 0 16px #22c55e;
 }
 
 .copy-block,
@@ -866,6 +952,15 @@ body.drawer-open .refresh-sticky {
   display: none;
 }
 
+@keyframes ticker-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @keyframes pop {
   0%,
   100% {
@@ -1053,13 +1148,21 @@ body.drawer-open .refresh-sticky {
 
 @media (max-width: 720px) {
   .site-banner {
-    padding: 10px 8px 8px;
+    padding: 8px 8px 6px;
   }
 
   .site-title {
-    display: block;
     font-size: clamp(18px, 6.2vw, 28px);
     letter-spacing: 0.04em;
+  }
+
+  .site-logo {
+    height: 44px;
+  }
+
+  .promo-ticker {
+    font-size: 14px;
+    padding: 8px 0;
   }
 
   .site-main {
@@ -1222,11 +1325,21 @@ body.drawer-open .refresh-sticky {
     font-size: 16px;
   }
 
+  .site-logo {
+    height: 36px;
+  }
+
   .contact-actions {
     grid-template-columns: 1fr;
   }
 
   .leak-times li {
     font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-ticker-track {
+    animation: none;
   }
 }

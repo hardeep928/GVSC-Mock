@@ -176,8 +176,18 @@ function toAmPm(time) {
   return `${hour12}:${minute} ${suffix}`;
 }
 
+function promoTicker() {
+  const item = `<span class="promo-ticker-item">${SITE_COPY.ticker}</span>`;
+  return `
+    <a class="promo-ticker" href="${escapeHtml(APP_URL)}" target="_blank" rel="noopener noreferrer">
+      <span class="promo-ticker-track">${item.repeat(8)}</span>
+    </a>
+  `;
+}
+
 function hindiIntro(extra) {
   return `
+    ${promoTicker()}
     <section class="copy-block">
       <p>${SITE_COPY.intro}</p>
       ${extra ? `<p>${extra}</p>` : ""}
@@ -213,7 +223,7 @@ function liveResultsBoard(markets) {
       <div class="hero-bar">
         <p>BEST SITE MATKA RESULT !</p>
         <strong>
-          <span class="neon-domain">WWW.MATKAKING.COM</span>
+          <span class="neon-domain">WWW.GVSC.COM</span>
           <span class="rgb-live">(LIVE)</span>
         </strong>
       </div>
@@ -422,7 +432,7 @@ function renderYear() {
       <div class="hero-bar">
         <p>BEST SITE MATKA RESULT !</p>
         <strong>
-          <span class="neon-domain">WWW.MATKAKING.COM</span>
+          <span class="neon-domain">WWW.GVSC.COM</span>
           <span class="rgb-live">(LIVE)</span>
         </strong>
       </div>
