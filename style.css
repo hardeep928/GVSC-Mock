@@ -1306,25 +1306,3 @@ body.drawer-open .refresh-sticky {
     animation: none;
   }
 }
-
-@media (max-width: 980px) {
-  .site-title,
-  .hero-bar,
-  .hero-bar p,
-  .live-kicker,
-  .live-item,
-  .rgb-live,
-  .protect-badge,
-  .telegram-btn,
-  .panel-bar,
-  .leak-board h2,
-  .leak-stars,
-  .leak-dot,
-  .shine-btn,
-  .refresh-sticky,
-  .float-card--app,
-  .float-card--form {
-    animation: none !important;
-    filter: none;
-  }
-}
