@@ -176,19 +176,8 @@ function toAmPm(time) {
   return `${hour12}:${minute} ${suffix}`;
 }
 
-function promoTicker() {
-  const phrase = `<span class="promo-ticker-item">${SITE_COPY.ticker}</span>`;
-  const group = `<span class="promo-ticker-group">${phrase}${phrase}${phrase}</span>`;
-  return `
-    <a class="promo-ticker" href="${escapeHtml(APP_URL)}" target="_blank" rel="noopener noreferrer">
-      <span class="promo-ticker-track">${group}${group}</span>
-    </a>
-  `;
-}
-
 function hindiIntro(extra) {
   return `
-    ${promoTicker()}
     <section class="copy-block">
       <p>${SITE_COPY.intro}</p>
       ${extra ? `<p>${extra}</p>` : ""}
@@ -520,6 +509,36 @@ document.getElementById("refresh-page")?.addEventListener("click", () => {
   location.reload();
 });
 
+function setupPromoTicker() {
+  const ticker = document.querySelector(".promo-ticker");
+  const track = document.querySelector(".promo-ticker-track");
+  const copies = document.querySelectorAll(".promo-ticker-copy");
+  if (!ticker || !track || copies.length < 2) {
+    return;
+  }
+
+  const item = `<span class="promo-ticker-item">◆ ${SITE_COPY.ticker}</span>`;
+  const fillCopy = (node) => {
+    node.innerHTML = item;
+    let guard = 0;
+    while (node.offsetWidth < ticker.clientWidth + 80 && guard < 12) {
+      node.insertAdjacentHTML("beforeend", item);
+      guard += 1;
+    }
+  };
+
+  fillCopy(copies[0]);
+  copies[1].innerHTML = copies[0].innerHTML;
+
+  const shift = copies[0].offsetWidth;
+  if (!shift) {
+    return;
+  }
+
+  track.style.setProperty("--ticker-shift", `${shift}px`);
+  track.style.setProperty("--ticker-time", `${Math.max(10, Math.round(shift / 55))}s`);
+}
+
 function stampUpdated() {
   const node = document.getElementById("last-updated");
   if (node) {
@@ -556,4 +575,12 @@ async function loadMarkets() {
 updateContactLinks();
 loadSettings();
 loadMarkets();
+setupPromoTicker();
+if (document.fonts?.ready) {
+  document.fonts.ready.then(setupPromoTicker);
+}
+window.addEventListener("resize", () => {
+  window.clearTimeout(setupPromoTicker._timer);
+  setupPromoTicker._timer = window.setTimeout(setupPromoTicker, 150);
+});
 render({ scrollTop: true });
