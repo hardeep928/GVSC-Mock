@@ -165,43 +165,27 @@ textarea {
   padding: 12px 0;
   border-radius: 12px;
   border: 1px solid #ffe082;
-  background: linear-gradient(90deg, #7f1d1d, #c2410c, #ea580c, #ca8a04, #ea580c, #c2410c, #7f1d1d);
-  background-size: 220% 100%;
+  background: linear-gradient(90deg, #9a1b1b, #ea580c 40%, #ca8a04 50%, #ea580c 60%, #9a1b1b);
   color: #fff7ed;
   font-weight: 800;
   font-size: 17px;
   letter-spacing: 0.03em;
-  box-shadow:
-    0 0 0 1px rgba(253, 224, 71, 0.35),
-    0 8px 22px rgba(234, 88, 12, 0.32);
-  animation: shine 3.2s linear infinite;
-}
-
-.promo-ticker::before,
-.promo-ticker::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 42px;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.promo-ticker::before {
-  left: 0;
-  background: linear-gradient(90deg, rgba(127, 29, 29, 0.95), transparent);
-}
-
-.promo-ticker::after {
-  right: 0;
-  background: linear-gradient(270deg, rgba(127, 29, 29, 0.95), transparent);
+  transform: translateZ(0);
+  contain: paint;
 }
 
 .promo-ticker-track {
   display: flex;
   width: max-content;
-  animation: ticker-rtl 18s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  animation: ticker-rtl 22s linear infinite;
+}
+
+.promo-ticker-group {
+  display: flex;
+  flex-shrink: 0;
 }
 
 .promo-ticker-item {
@@ -210,23 +194,18 @@ textarea {
   gap: 14px;
   padding: 0 28px;
   white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 0 12px rgba(255, 211, 78, 0.45);
 }
 
 .promo-ticker-item::before {
   content: "◆";
   color: #fde047;
   font-size: 0.72em;
-  animation: gold-pulse 1.4s ease-in-out infinite;
 }
 
 .promo-ticker-item b {
   color: #fff;
   font-size: 1.08em;
   letter-spacing: 0.12em;
-  text-shadow:
-    0 0 8px #39ff14,
-    0 0 16px #22c55e;
 }
 
 .copy-block,
@@ -954,10 +933,10 @@ body.drawer-open .refresh-sticky {
 
 @keyframes ticker-rtl {
   from {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 

@@ -1,6 +1,6 @@
 const APP_URL = "https://gvsc.myaibusiness.online/";
-const TELEGRAM_URL = "https://t.me/+919929624882";
-const CONTACT_FALLBACK = "9929624882";
+const TELEGRAM_URL = "https://t.me/+919988994688";
+const CONTACT_FALLBACK = "9988994688";
 
 const FALLBACK_MARKETS = [
   {
@@ -140,7 +140,7 @@ const MARKET_HINDI = {
 const HOME_CHART_MARKETS = CHART_MARKETS.map((market) => market.id);
 
 const SITE_COPY = {
-  ticker: "मटकाकिंग खेलने के लिए <b>GVSC</b> ऐप को डाउनलोड करें",
+  ticker: "मटका गेम खेलने के लिए <b>GVSC</b> ऐप को डाउनलोड करें",
   intro:
     "दोस्तों, GVSC.com पर आपका स्वागत है। यहाँ दिल्ली स्टार, रावसेद, इलाग, दिल्ली बाज़ार, श्री गणेश, फरीदाबाद, गाज़ियाबाद, गली, एनसीआर और दिसावर समेत सभी मार्केट के सबसे तेज़ और सही रिजल्ट मिलते हैं। ताज़ा रिजल्ट, लीक जोड़ी और पुराने चार्ट एक ही जगह देखें।",
   yearIntro:

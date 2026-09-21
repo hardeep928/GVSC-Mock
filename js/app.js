@@ -177,10 +177,11 @@ function toAmPm(time) {
 }
 
 function promoTicker() {
-  const item = `<span class="promo-ticker-item">${SITE_COPY.ticker}</span>`;
+  const phrase = `<span class="promo-ticker-item">${SITE_COPY.ticker}</span>`;
+  const group = `<span class="promo-ticker-group">${phrase}${phrase}${phrase}</span>`;
   return `
     <a class="promo-ticker" href="${escapeHtml(APP_URL)}" target="_blank" rel="noopener noreferrer">
-      <span class="promo-ticker-track">${item.repeat(8)}</span>
+      <span class="promo-ticker-track">${group}${group}</span>
     </a>
   `;
 }
@@ -529,17 +530,8 @@ stampUpdated();
 setInterval(stampUpdated, 30000);
 
 async function loadSettings() {
-  try {
-    const response = await fetch(SETTINGS_API, { cache: "no-store" });
-    const data = await response.json();
-    const settings = data.data || {};
-    state.contact = settings.contact_no || settings.telegram_no || CONTACT_FALLBACK;
-    if (settings.telegram_url || settings.telegram) {
-      state.telegram = settings.telegram_url || settings.telegram;
-    }
-  } catch (error) {
-    state.contact = CONTACT_FALLBACK;
-  }
+  state.contact = CONTACT_FALLBACK;
+  state.telegram = TELEGRAM_URL;
   updateContactLinks();
 }
 
